@@ -1,0 +1,19 @@
+$light-bg: #ffffff;
+$light-text: #000000;
+
+$dark-bg: #00a80036;
+$dark-text: #000000;
+
+.light-mode {
+  background-color: $light-bg;
+  color: $light-text;
+}
+
+.dark-mode {
+  background-color: $dark-bg !important;
+  color: $dark-text !important;
+}
+
+body {
+  transition: background-color 0.3s ease-in-out;
+}

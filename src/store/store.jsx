@@ -1,8 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import bookReducer from './slices/bookingSlice'
+import reservationReducer from "./slices/reservationSlice";
+import themeReducer from "./slices/themeSlice";
 
 export const store = configureStore({
   reducer: {
-    booking: bookReducer
+    reservations: reservationReducer,
+    theme: themeReducer,
   },
 });

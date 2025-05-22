@@ -3,51 +3,39 @@ import { useSelector } from "react-redux";
 import { Calendar as Cal, momentLocalizer } from "react-big-calendar";
 // import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import moment from "moment";
+import { Container } from "react-bootstrap";
 
-import './Calendar.scss';
+import "./Calendar.scss";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
 
 export default function Calendar() {
-  const bookings = useSelector((state) => state.booking);
-
-  // console.log(bookings);
-  // console.log(moment().add(-1, "hour").toDate());
-  let test1 = moment().add(1, "hour").toDate();
-  let test2 = moment().add(1, "hour").toDate();
-
-  console.log(test1)
-  console.log(test2)
+  const { bookings } = useSelector((state) => state.reservations);
 
   const events = useMemo(
     () =>
       bookings.map((booking) => ({
-        title: booking.title,
-        start: moment(booking.start).toDate(),
-        end: moment(booking.start).toDate(),
+        title: booking.subject,
+        start: moment(booking.startDate).toDate(),
+        end: moment(booking.endDate).toDate(),
         allDay: booking.allDay || false,
-        resource: booking.resource || {},
+        resource: {
+          ...booking.resource,
+          room: booking.room,
+          name: booking.name,
+        },
       })),
-    [bookings]
+    [bookings],
   );
 
   const handleOnSelectEvent = useCallback((selectEvent) => {
     console.log(selectEvent);
   }, []);
 
-  const eventStyleGetter = () => {
-    const now = new Date();
-    const start = new Date(event.start);
-    const end = new Date(event.end);
-    let backgroundColor = end < now ? 'red' : start <= now && end >= now ? 'grey' : 'blue'
-      return {
-        style: {backgroundColor}
-      }
-    }
   return (
-    <div className="">
+    <Container className="mt-2">
       <Cal
         localizer={localizer}
         defaultDate={new Date()}
@@ -55,9 +43,8 @@ export default function Calendar() {
         events={events}
         resizable
         onSelectEvent={handleOnSelectEvent}
-        eventPropGetter={eventStyleGetter}
         style={{ height: "100vh" }}
       />
-    </div>
+    </Container>
   );
 }
