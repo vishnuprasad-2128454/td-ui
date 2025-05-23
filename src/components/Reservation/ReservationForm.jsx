@@ -9,18 +9,15 @@ import {
 } from "react-bootstrap";
 
 const ReservationForm = (props) => {
-  const { onSubmit, initialData, fields } = props;
+  const { onSubmit, initialData, fields, formData, onChange } = props;
 
-  const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState({});
   const [advancedSearch, setAdvancedSearch] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+
+    onChange(name, value, type, checked);
   };
 
   const handleToggleSearchMode = () => {
@@ -29,9 +26,10 @@ const ReservationForm = (props) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+       
     const newErrors = {};
     fields.forEach(({ name, required, type, label }) => {
+      // console.log(formData);
       if (required && !formData[name]) {
         newErrors[name] = `${label} is required`;
       }
@@ -41,13 +39,14 @@ const ReservationForm = (props) => {
         }
       }
     });
-
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
     onSubmit(formData);
-    setFormData(initialData);
+    onChange(initialData);
+    // setFormData(initialData);
     setErrors({});
   };
 
@@ -61,7 +60,7 @@ const ReservationForm = (props) => {
       "toTime",
       "attendees",
       "layout",
-    ].includes(name),
+    ].includes(name)
   );
   const advancedSearchFields = fields.filter(({ name }) =>
     [
@@ -74,7 +73,7 @@ const ReservationForm = (props) => {
       "attendees",
       "layout",
       "vcu",
-    ].includes(name),
+    ].includes(name)
   );
 
   return (
@@ -94,8 +93,9 @@ const ReservationForm = (props) => {
                       <Form.Select
                         className={errors[name] ? "is-invalid" : ""}
                         name={name}
-                        value={formData[name]}
+                        value={formData?.[name]}
                         onChange={handleChange}
+                        multiple={false}
                       >
                         {options?.map((opt) => {
                           return (

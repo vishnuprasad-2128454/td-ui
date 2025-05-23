@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 // import { useNavigate } from "react-router-dom";
 import { bookRoom } from "../../store/slices/reservationSlice";
@@ -17,35 +17,65 @@ const Reservation = () => {
 
   useEffect(() => {
     const generateTimeArr = () => {
-      let currentTime = moment().startOf("hour");
+      const currentTime = moment()
+      const startOfHour = moment().startOf("hour");
       let endTime = moment().endOf("day").add(1, "minute");
       let timeArr = [];
 
-      while (currentTime < endTime) {
-        if (moment().isAfter(currentTime)) currentTime.add(30, "minutes");
-        timeArr.push(currentTime.format("hh:mm A"));
-        currentTime.add(30, "minutes");
+      if (currentTime.isBefore(startOfHour.clone().add(30, 'minutes'))) {
+        startOfHour.add(30, "minutes")
+          .format("hh:mm A");
+      } else {
+        startOfHour.add(1, 'hour').format("hh:mm A");
+      }
+
+      while (startOfHour < endTime) {
+        timeArr.push(startOfHour.format("hh:mm A"));
+        startOfHour.add(30, "minutes");
       }
       setTimeArray(timeArr);
     };
     generateTimeArr();
   }, []);
 
-  const initialState = {
-    country: "",
-    location: "",
-    locationCategory: "",
-    date: today,
-    fromTime: timeArray[0],
-    toTime: timeArray,
-    attendees: "",
-    layout: "",
-    floor: "",
-    workspaceType: "",
-    vcu: false,
-    from: moment().format("YYYY-MM-DDTHH:mm"),
-    to: moment().add(1, "hour").format("YYYY-MM-DDTHH:mm"),
-  };
+  let timeObj = setInitialTime(moment(), moment()
+  .startOf("hour"))
+  
+  function setInitialTime(currentTime, startOfHour) {
+    let time = {}
+    if (currentTime.isBefore(startOfHour.clone().add(30, 'minutes'))) {
+      time.fromTime = 
+      startOfHour.add(30, "minutes")
+        .format("hh:mm A");
+    } else {
+      time.fromTime = startOfHour.add(1, 'hour').format("hh:mm A");
+    }
+      time.toTime = startOfHour
+        .add(30, "minutes")
+        .format("hh:mm A");
+      return time
+  }
+
+  const initialState = useMemo(
+    () => ({
+      attendees: "",
+      country: "",
+      date: today,
+      floor: "",
+      from: moment().format("YYYY-MM-DDTHH:mm"),
+      fromTime: timeObj.fromTime,
+      location: "",
+      layout: "",
+      locationCategory: "",
+      to: moment().add(1, "hour").format("YYYY-MM-DDTHH:mm"),
+      toTime: timeObj.toTime,
+      vcu: false,
+      workspaceType: "",
+    }),
+    [timeObj.fromTime, timeObj.toTime, today]
+  );
+
+  const [formData, setFormData] = useState(initialState);
 
   const fields = [
     {
@@ -114,6 +144,7 @@ const Reservation = () => {
       label: "From",
       type: "select",
       options: timeArray.slice(0, timeArray.length - 1),
+      default: timeArray[0],
       required: true,
     },
     {
@@ -158,13 +189,19 @@ const Reservation = () => {
     },
   ];
 
+  const handleChange = (name, value, type, checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
   const handleBooking = (formData) => {
     console.log(formData);
     dispatch(
       bookRoom({
         ...formData,
-        resource: {},
-      }),
+      })
     );
   };
 
@@ -180,6 +217,8 @@ const Reservation = () => {
                 bookings={bookings}
                 initialData={initialState}
                 fields={fields}
+                formData={formData}
+                onChange={handleChange}
               />
             </Card.Body>
           </Card>
