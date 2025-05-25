@@ -8,74 +8,34 @@ import ReservationForm from "./ReservationForm";
 
 const Reservation = () => {
   // const navigate = useNavigate();
+  const dateTimeFormat = "YYYY-MM-DDThh:mm";
+  const dateFormat = "YYYY-MM-DD";
+  const timeFormat = "hh:mm A";
   const dispatch = useDispatch();
   const { bookings } = useSelector((state) => state.reservations);
 
+  const [advancedSearch, setAdvancedSearch] = useState(false);
+
   const [timeArray, setTimeArray] = useState([]);
-  const today = moment().format("YYYY-MM-DD");
-  const now = moment().format("YYYY-MM-DD HH:mm");
+  const now = moment();
+  const [selectDateTime, setSelectDateTime] = useState(now);
 
-  useEffect(() => {
-    const generateTimeArr = () => {
-      const currentTime = moment()
-      const startOfHour = moment().startOf("hour");
-      let endTime = moment().endOf("day").add(1, "minute");
-      let timeArr = [];
+  const selectedDateTime = moment(selectDateTime);
 
-      if (currentTime.isBefore(startOfHour.clone().add(30, 'minutes'))) {
-        startOfHour.add(30, "minutes")
-          .format("hh:mm A");
-      } else {
-        startOfHour.add(1, 'hour').format("hh:mm A");
-      }
-
-      while (startOfHour < endTime) {
-        timeArr.push(startOfHour.format("hh:mm A"));
-        startOfHour.add(30, "minutes");
-      }
-      setTimeArray(timeArr);
-    };
-    generateTimeArr();
-  }, []);
-
-  let timeObj = setInitialTime(moment(), moment()
-  .startOf("hour"))
-  
-  function setInitialTime(currentTime, startOfHour) {
-    let time = {}
-    if (currentTime.isBefore(startOfHour.clone().add(30, 'minutes'))) {
-      time.fromTime = 
-      startOfHour.add(30, "minutes")
-        .format("hh:mm A");
+  function setInitialTime(currentTime) {
+    let time = {};
+    let startOfHour = moment(currentTime).startOf("hour");
+    if (currentTime.isBefore(startOfHour.clone().add(30, "minutes"))) {
+      time.fromTime = startOfHour.clone().add(30, "minutes");
     } else {
-      time.fromTime = startOfHour.add(1, 'hour').format("hh:mm A");
+      time.fromTime = startOfHour.clone().add(1, "hour");
     }
-      time.toTime = startOfHour
-        .add(30, "minutes")
-        .format("hh:mm A");
-      return time
+    time.toTime = startOfHour.add(30, "minutes");
+    time.current = moment(currentTime);
+    return time;
   }
 
-  const initialState = useMemo(
-    () => ({
-      attendees: "",
-      country: "",
-      date: today,
-      floor: "",
-      from: moment().format("YYYY-MM-DDTHH:mm"),
-      fromTime: timeObj.fromTime,
-      location: "",
-      layout: "",
-      locationCategory: "",
-      to: moment().add(1, "hour").format("YYYY-MM-DDTHH:mm"),
-      toTime: timeObj.toTime,
-      vcu: false,
-      workspaceType: "",
-    }),
-    [timeObj.fromTime, timeObj.toTime, today]
-  );
-
-  const [formData, setFormData] = useState(initialState);
+  let timeObj = setInitialTime(selectDateTime);
 
   const fields = [
     {
@@ -137,13 +97,16 @@ const Reservation = () => {
       label: "Date",
       type: "date",
       required: true,
-      min: today,
+      min: now.format(dateFormat),
     },
     {
       name: "fromTime",
       label: "From",
       type: "select",
-      options: timeArray.slice(0, timeArray.length - 1),
+      options:
+        selectedDateTime.format(dateFormat) > now.format(dateFormat)
+          ? timeArray
+          : timeArray.slice(0, timeArray.length - 1),
       default: timeArray[0],
       required: true,
     },
@@ -151,7 +114,10 @@ const Reservation = () => {
       name: "toTime",
       label: "To",
       type: "select",
-      options: timeArray.slice(1),
+      options:
+        selectedDateTime.format(dateFormat) > now.format(dateFormat)
+          ? timeArray.slice(0,timeArray.length -1)
+          : timeArray.slice(1),
       required: true,
     },
     {
@@ -159,14 +125,14 @@ const Reservation = () => {
       label: "From",
       type: "dateTime-local",
       required: true,
-      min: now,
+      min: now.format(dateTimeFormat),
     },
     {
       name: "to",
       label: "To",
       type: "dateTime-local",
       required: true,
-      min: moment(now).add(1, "hour").format("YYYY-MM-DD HH:mm"),
+      min: selectedDateTime.add(1, "hour").format(dateTimeFormat),
     },
     {
       name: "attendees",
@@ -189,7 +155,51 @@ const Reservation = () => {
     },
   ];
 
+  useEffect(() => {
+    const generateTimeArr = () => {
+      const currentTime = moment(selectDateTime);
+      const startOfHour = moment(selectDateTime).startOf("hour").clone();
+      let endTime = moment(selectDateTime).endOf("day").add(1, "minute");
+      let timeArr = [];
+
+      if (currentTime.isBefore(startOfHour.clone().add(30, "minutes"))) {
+        startOfHour.add(30, "minutes").format(timeFormat);
+      } else {
+        startOfHour.add(1, "hour").format(timeFormat);
+      }
+
+      while (startOfHour < endTime) {
+        timeArr.push(startOfHour.format(timeFormat));
+        startOfHour.add(30, "minutes");
+      }
+      setTimeArray(timeArr);
+    };
+    generateTimeArr();
+  }, [selectDateTime]);
+
+  const initialState = useMemo(
+    () => ({
+      attendees: "",
+      country: "",
+      date: timeObj.current.format(dateFormat),
+      floor: "",
+      from: moment().format(dateTimeFormat),
+      fromTime: timeObj.fromTime?.format(timeFormat),
+      location: "",
+      layout: "",
+      locationCategory: "",
+      to: moment().add(1, "hour").format(dateTimeFormat),
+      toTime: timeObj.toTime?.format(timeFormat),
+      vcu: false,
+      workspaceType: "",
+    }),
+    [timeObj]
+  );
+
+  const [formData, setFormData] = useState(initialState);
+
   const handleChange = (name, value, type, checked) => {
+    (name === "date" || name === "from") && setSelectDateTime(moment(value));
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -203,6 +213,10 @@ const Reservation = () => {
         ...formData,
       })
     );
+  };
+
+  const handleToggleSearchMode = () => {
+    setAdvancedSearch(!advancedSearch);
   };
 
   return (
@@ -219,6 +233,8 @@ const Reservation = () => {
                 fields={fields}
                 formData={formData}
                 onChange={handleChange}
+                advancedSearch={advancedSearch}
+                handleToggle={handleToggleSearchMode}
               />
             </Card.Body>
           </Card>

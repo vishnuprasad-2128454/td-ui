@@ -9,10 +9,17 @@ import {
 } from "react-bootstrap";
 
 const ReservationForm = (props) => {
-  const { onSubmit, initialData, fields, formData, onChange } = props;
+  const {
+    onSubmit,
+    initialData,
+    fields,
+    formData,
+    onChange,
+    advancedSearch,
+    handleToggle,
+  } = props;
 
   const [errors, setErrors] = useState({});
-  const [advancedSearch, setAdvancedSearch] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,13 +27,9 @@ const ReservationForm = (props) => {
     onChange(name, value, type, checked);
   };
 
-  const handleToggleSearchMode = () => {
-    setAdvancedSearch(!advancedSearch);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-       
+
     const newErrors = {};
     fields.forEach(({ name, required, type, label }) => {
       // console.log(formData);
@@ -39,7 +42,7 @@ const ReservationForm = (props) => {
         }
       }
     });
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -157,7 +160,8 @@ const ReservationForm = (props) => {
       <Row className="mt-3">
         <Col xs={12} className="text-end">
           <a
-            onClick={handleToggleSearchMode}
+            // onClick={handleToggleSearchMode}
+            onClick={() => handleToggle()}
             className="text-primary"
             style={{ cursor: "pointer", fontSize: "14px" }}
           >
