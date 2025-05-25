@@ -53,36 +53,10 @@ const ReservationForm = (props) => {
     setErrors({});
   };
 
-  const quickSearchFields = fields.filter(({ name }) =>
-    [
-      "country",
-      "location",
-      "locationCategory",
-      "date",
-      "fromTime",
-      "toTime",
-      "attendees",
-      "layout",
-    ].includes(name)
-  );
-  const advancedSearchFields = fields.filter(({ name }) =>
-    [
-      "country",
-      "location",
-      "floor",
-      "workspaceType",
-      "from",
-      "to",
-      "attendees",
-      "layout",
-      "vcu",
-    ].includes(name)
-  );
-
   return (
     <Form onSubmit={handleSubmit}>
       <Row className="g-3">
-        {(advancedSearch ? advancedSearchFields : quickSearchFields)
+        {fields
           .filter((el) => el["type"] !== "checkbox")
           .map(({ name, label, type, required, options, min }) => {
             return (
@@ -90,11 +64,13 @@ const ReservationForm = (props) => {
                 <InputGroup className="align-items-baseline">
                   {options ? (
                     <FloatingLabel
-                      controlId="floatingSelect"
+                      controlId={`floating-${name}`}
                       label={`${label}${required ? "*" : ""}`}
+                      aria-label={label}
                     >
                       <Form.Select
                         className={errors[name] ? "is-invalid" : ""}
+                        aria-invalid={errors[name] ? true : false}
                         name={name}
                         value={formData?.[name]}
                         onChange={handleChange}
@@ -112,10 +88,12 @@ const ReservationForm = (props) => {
                   ) : (
                     <FloatingLabel
                       controlId="floatingInput"
+                      aria-label={label}
                       label={`${label}${required ? "*" : ""}`}
                     >
                       <Form.Control
                         className={errors[name] ? "is-invalid" : ""}
+                        aria-invalid={errors[name] ? true : false}
                         type={type}
                         name={name}
                         placeholder={`Enter ${label}`}
@@ -142,7 +120,7 @@ const ReservationForm = (props) => {
           })}
       </Row>
       <Row className="g-3">
-        {(advancedSearch ? advancedSearchFields : quickSearchFields)
+        {fields
           .filter((el) => el["type"] === "checkbox")
           .map(({ name, label }) => (
             <Col xs={12} key={name}>
@@ -161,7 +139,7 @@ const ReservationForm = (props) => {
         <Col xs={12} className="text-end">
           <a
             // onClick={handleToggleSearchMode}
-            onClick={() => handleToggle()}
+            onClick={handleToggle}
             className="text-primary"
             style={{ cursor: "pointer", fontSize: "14px" }}
           >
