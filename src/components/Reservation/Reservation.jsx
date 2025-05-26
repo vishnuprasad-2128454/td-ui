@@ -8,7 +8,7 @@ import ReservationForm from "./ReservationForm";
 
 const Reservation = () => {
   // const navigate = useNavigate();
-  const dateTimeFormat = "YYYY-MM-DDThh:mm";
+  const dateTimeFormat = "YYYY-MM-DDTHH:mm";
   const dateFormat = "YYYY-MM-DD";
   const timeFormat = "hh:mm A";
   const dispatch = useDispatch();
@@ -158,7 +158,7 @@ const Reservation = () => {
         label: "To",
         type: "dateTime-local",
         required: true,
-        min: selectedDateTime.add(1, "hour").format(dateTimeFormat),
+        min: selectedDateTime.clone().add(1, "hour").format(dateTimeFormat),
       },
       {
         name: "attendees",
@@ -218,31 +218,35 @@ const Reservation = () => {
     [fields],
   );
 
-  const selectedFields = advancedSearch
-    ? advancedSearchFields
-    : quickSearchFields;
-  console.log(selectedFields.length);
+  let initialState = useMemo(
+    () =>
+      (advancedSearch ? advancedSearchFields : quickSearchFields).reduce(
+        (acc, { name, type }) => {
+          if (type === "checkbox") acc[name] = false;
+          if (!advancedSearch && type === "date")
+            acc[name] = timeObj.current.format(dateFormat);
+          if (!advancedSearch && type === "select" && name === "fromTime")
+            acc[name] = timeObj.fromTime?.format(timeFormat);
+          if (!advancedSearch && type === "select" && name === "toTime")
+            acc[name] = timeObj.toTime.format(timeFormat);
+          if (advancedSearch && type === "dateTime-local" && name === "from")
+            acc[name] = moment().format(dateTimeFormat);
+          if (advancedSearch && type === "dateTime-local" && name === "to")
+            acc[name] = moment().add(1, "hour").format(dateTimeFormat);
+          if (acc[name] === undefined) acc[name] = "";
 
-  const initialState = useMemo(
-    () => ({
-      attendees: "",
-      country: "",
-      date: timeObj.current.format(dateFormat),
-      floor: "",
-      from: moment().format(dateTimeFormat),
-      fromTime: timeObj.fromTime?.format(timeFormat),
-      location: "",
-      layout: "",
-      locationCategory: "",
-      to: moment().add(1, "hour").format(dateTimeFormat),
-      toTime: timeObj.toTime?.format(timeFormat),
-      vcu: false,
-      workspaceType: "",
-    }),
-    [timeObj],
+          return acc;
+        },
+        {},
+      ),
+    [advancedSearch, timeObj],
   );
 
   const [formData, setFormData] = useState(initialState);
+
+  useEffect(() => {
+    setFormData(initialState);
+  }, [advancedSearch]);
 
   const handleChange = useCallback((name, value, type, checked) => {
     if (name === "date" || name === "from") {
@@ -265,6 +269,7 @@ const Reservation = () => {
         ...formData,
       }),
     );
+    setFormData(initialState);
   };
 
   const handleToggleSearchMode = useCallback(() => {

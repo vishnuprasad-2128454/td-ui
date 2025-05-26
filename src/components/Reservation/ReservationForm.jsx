@@ -32,7 +32,6 @@ const ReservationForm = (props) => {
 
     const newErrors = {};
     fields.forEach(({ name, required, type, label }) => {
-      // console.log(formData);
       if (required && !formData[name]) {
         newErrors[name] = `${label} is required`;
       }
@@ -41,6 +40,8 @@ const ReservationForm = (props) => {
           newErrors[name] = `Please select a proper ${label}`;
         }
       }
+      if (type === "dateTime-local" && formData["from"] === formData["to"])
+        newErrors["to"] = "To Date and Time can't be same as from time";
     });
 
     if (Object.keys(newErrors).length > 0) {
@@ -72,13 +73,13 @@ const ReservationForm = (props) => {
                         className={errors[name] ? "is-invalid" : ""}
                         aria-invalid={errors[name] ? true : false}
                         name={name}
-                        value={formData?.[name]}
+                        value={formData?.[name] || ""}
                         onChange={handleChange}
                         multiple={false}
                       >
                         {options?.map((opt) => {
                           return (
-                            <option key={opt} value={opt}>
+                            <option key={opt} value={opt || ""}>
                               {opt}
                             </option>
                           );
@@ -97,7 +98,7 @@ const ReservationForm = (props) => {
                         type={type}
                         name={name}
                         placeholder={`Enter ${label}`}
-                        value={formData[name]}
+                        value={formData[name] || ""}
                         onChange={handleChange}
                         min={
                           type === "date" ||
@@ -109,12 +110,12 @@ const ReservationForm = (props) => {
                       />
                     </FloatingLabel>
                   )}
-                  {errors[name] && (
-                    <div className="invalid-feedback mx-5 px-5">
-                      {errors[name]}
-                    </div>
-                  )}
                 </InputGroup>
+                {errors[name] && (
+                  <span className="text-danger d-flex px-2 mx-1">
+                    {errors[name]}
+                  </span>
+                )}
               </Col>
             );
           })}
@@ -129,7 +130,7 @@ const ReservationForm = (props) => {
                 type="checkbox"
                 label={label}
                 name={name}
-                checked={formData[name]}
+                checked={formData[name] ?? false}
                 onChange={handleChange}
               />
             </Col>
