@@ -32,7 +32,6 @@ const ReservationForm = (props) => {
 
     const newErrors = {};
     fields.forEach(({ name, required, type, label }) => {
-      // console.log(formData);
       if (required && !formData[name]) {
         newErrors[name] = `${label} is required`;
       }
@@ -41,6 +40,8 @@ const ReservationForm = (props) => {
           newErrors[name] = `Please select a proper ${label}`;
         }
       }
+      if (type === "dateTime-local" && formData["from"] === formData["to"])
+        newErrors["to"] = "To Date and Time can't be same as from time";
     });
 
     if (Object.keys(newErrors).length > 0) {
@@ -53,36 +54,10 @@ const ReservationForm = (props) => {
     setErrors({});
   };
 
-  const quickSearchFields = fields.filter(({ name }) =>
-    [
-      "country",
-      "location",
-      "locationCategory",
-      "date",
-      "fromTime",
-      "toTime",
-      "attendees",
-      "layout",
-    ].includes(name)
-  );
-  const advancedSearchFields = fields.filter(({ name }) =>
-    [
-      "country",
-      "location",
-      "floor",
-      "workspaceType",
-      "from",
-      "to",
-      "attendees",
-      "layout",
-      "vcu",
-    ].includes(name)
-  );
-
   return (
     <Form onSubmit={handleSubmit}>
       <Row className="g-3">
-        {(advancedSearch ? advancedSearchFields : quickSearchFields)
+        {fields
           .filter((el) => el["type"] !== "checkbox")
           .map(({ name, label, type, required, options, min }) => {
             return (
@@ -90,19 +65,21 @@ const ReservationForm = (props) => {
                 <InputGroup className="align-items-baseline">
                   {options ? (
                     <FloatingLabel
-                      controlId="floatingSelect"
+                      controlId={`floating-${name}`}
                       label={`${label}${required ? "*" : ""}`}
+                      aria-label={label}
                     >
                       <Form.Select
                         className={errors[name] ? "is-invalid" : ""}
+                        aria-invalid={errors[name] ? true : false}
                         name={name}
-                        value={formData?.[name]}
+                        value={formData?.[name] || ""}
                         onChange={handleChange}
                         multiple={false}
                       >
                         {options?.map((opt) => {
                           return (
-                            <option key={opt} value={opt}>
+                            <option key={opt} value={opt || ""}>
                               {opt}
                             </option>
                           );
@@ -112,14 +89,16 @@ const ReservationForm = (props) => {
                   ) : (
                     <FloatingLabel
                       controlId="floatingInput"
+                      aria-label={label}
                       label={`${label}${required ? "*" : ""}`}
                     >
                       <Form.Control
                         className={errors[name] ? "is-invalid" : ""}
+                        aria-invalid={errors[name] ? true : false}
                         type={type}
                         name={name}
                         placeholder={`Enter ${label}`}
-                        value={formData[name]}
+                        value={formData[name] || ""}
                         onChange={handleChange}
                         min={
                           type === "date" ||
@@ -131,18 +110,18 @@ const ReservationForm = (props) => {
                       />
                     </FloatingLabel>
                   )}
-                  {errors[name] && (
-                    <div className="invalid-feedback mx-5 px-5">
-                      {errors[name]}
-                    </div>
-                  )}
                 </InputGroup>
+                {errors[name] && (
+                  <span className="text-danger d-flex px-2 mx-1">
+                    {errors[name]}
+                  </span>
+                )}
               </Col>
             );
           })}
       </Row>
       <Row className="g-3">
-        {(advancedSearch ? advancedSearchFields : quickSearchFields)
+        {fields
           .filter((el) => el["type"] === "checkbox")
           .map(({ name, label }) => (
             <Col xs={12} key={name}>
@@ -151,7 +130,7 @@ const ReservationForm = (props) => {
                 type="checkbox"
                 label={label}
                 name={name}
-                checked={formData[name]}
+                checked={formData[name] ?? false}
                 onChange={handleChange}
               />
             </Col>
@@ -161,7 +140,7 @@ const ReservationForm = (props) => {
         <Col xs={12} className="text-end">
           <a
             // onClick={handleToggleSearchMode}
-            onClick={() => handleToggle()}
+            onClick={handleToggle}
             className="text-primary"
             style={{ cursor: "pointer", fontSize: "14px" }}
           >
