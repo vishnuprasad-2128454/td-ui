@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { bookRoom } from "../../store/slices/reservationSlice";
 import { fetchDataService } from "../../service";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import moment from "moment";
 import ReservationForm from "./ReservationForm";
+import ModalComponent from "../Modal/Modal";
 
 const Reservation = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const dateTimeFormat = "YYYY-MM-DDTHH:mm";
   const dateFormat = "YYYY-MM-DD";
   const timeFormat = "hh:mm A";
@@ -17,6 +18,7 @@ const Reservation = () => {
 
   const [timeArray, setTimeArray] = useState([]);
   const [advancedSearch, setAdvancedSearch] = useState(false);
+  const [modalShow, setModalShow] = useState(false);
 
   const [data, setData] = useState({
     countries: [],
@@ -303,13 +305,28 @@ const Reservation = () => {
     [formData],
   );
 
-  const handleBooking = (formData) => {
+  const handleSubmit = (formData) => {
     console.log(formData);
     dispatch(
       bookRoom({
         ...formData,
       }),
     );
+    if (JSON.stringify(formData) !== JSON.stringify(initialState)) {
+      if (formData["date"] || formData["from"]) {
+        let DateTime = formData["date"]
+          ? moment(
+              `${formData["date"]} ${formData["fromTime"]}`,
+              dateTimeFormat,
+            )
+          : moment(formData["from"], dateTimeFormat);
+
+        DateTime.diff(moment(), "hour") > 72
+          ? setModalShow(true)
+          : navigate("/reservations/create-reservation");
+      }
+    }
+    setSelectDateTime(now);
     setFormData(initialState);
   };
 
@@ -334,13 +351,20 @@ const Reservation = () => {
 
   return (
     <Container className="mt-4">
+      {modalShow && (
+        <ModalComponent
+          show={modalShow}
+          onConfirm={() => navigate("/reservations/create-reservation")}
+          onHide={() => setModalShow(false)}
+        />
+      )}
       <Row className="justify-content-center">
         <Col>
           <Card className="shadow-lg">
             <Card.Body>
               <h2 className="text-center mb-4">Conference Room Reservation</h2>
               <ReservationForm
-                onSubmit={handleBooking}
+                onSubmit={handleSubmit}
                 bookings={bookings}
                 initialData={initialState}
                 fields={
