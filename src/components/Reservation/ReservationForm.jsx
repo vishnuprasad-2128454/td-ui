@@ -18,6 +18,7 @@ const ReservationForm = (props) => {
     advancedSearch,
     handleToggle,
   } = props;
+  // console.log(formData);
 
   const [errors, setErrors] = useState({});
 
@@ -77,9 +78,9 @@ const ReservationForm = (props) => {
                         onChange={handleChange}
                         multiple={false}
                       >
-                        {options?.map((opt) => {
+                        {options?.map((opt, index) => {
                           return (
-                            <option key={opt} value={opt || ""}>
+                            <option key={index} value={opt || ""}>
                               {opt}
                             </option>
                           );

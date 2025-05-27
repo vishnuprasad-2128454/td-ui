@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 // import { useNavigate } from "react-router-dom";
 import { bookRoom } from "../../store/slices/reservationSlice";
+import { fetchDataService } from "../../service";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import moment from "moment";
 import ReservationForm from "./ReservationForm";
@@ -17,6 +18,11 @@ const Reservation = () => {
   const [timeArray, setTimeArray] = useState([]);
   const [advancedSearch, setAdvancedSearch] = useState(false);
 
+  const [data, setData] = useState({
+    countries: [],
+    location: [],
+    locationCategory: [],
+  });
   const now = moment();
   const [selectDateTime, setSelectDateTime] = useState(now);
 
@@ -69,37 +75,20 @@ const Reservation = () => {
         label: "Country",
         type: "select",
         required: true,
-        options: ["Select a Country", "US", "Canada"],
+        options: ["Select a Country", ...data.countries],
       },
       {
         name: "location",
         label: "Location",
         type: "select",
         required: true,
-        options: [
-          "Select a Location",
-          "California",
-          "Texas",
-          "Florida",
-          "New York",
-          "Pennsylvania",
-          "Ontario",
-          "Quebec",
-          "British Columbia",
-          "Alberta",
-          "Manitoba",
-        ],
+        options: ["Select a Location", ...data.location],
       },
       {
         name: "locationCategory",
         label: "Location Category",
         type: "select",
-        options: [
-          "Select a Location Category",
-          "Location Category 1",
-          "Location Category 2",
-          "Location Category 3",
-        ],
+        options: ["Select a Location Category", ...data.locationCategory],
       },
       {
         name: "floor",
@@ -180,7 +169,7 @@ const Reservation = () => {
         checked: false,
       },
     ],
-    [now, selectedDateTime, timeArray],
+    [now, selectedDateTime, timeArray, data],
   );
 
   const quickSearchFields = useMemo(
@@ -248,19 +237,71 @@ const Reservation = () => {
     setFormData(initialState);
   }, [advancedSearch]);
 
-  const handleChange = useCallback((name, value, type, checked) => {
-    if (name === "date" || name === "from") {
-      setSelectDateTime(
-        moment(value).isSame(moment(), "day") ? moment() : moment(value),
-      );
-    }
-    setFormData((prev) => {
-      const updatedValue = type === "checkbox" ? checked : value;
-      return prev[name] === updatedValue
-        ? prev
-        : { ...prev, [name]: updatedValue };
-    });
-  }, []);
+  const handleChange = useCallback(
+    (name, value, type, checked) => {
+      if (name === "country") {
+        fetchDataService("https://countriesnow.space/api/v0.1/countries/states")
+          .then(
+            ({ data }) =>
+              data &&
+              data.filter(
+                (data) => data?.name?.toLowerCase() === value?.toLowerCase(),
+              ),
+          )
+          .then((country) =>
+            country?.[0]?.states.length > 0
+              ? country[0].states.map(({ name }) => name)
+              : [],
+          )
+          .then((locCat) => {
+            locCat &&
+              setData((prev) => ({
+                ...prev,
+                location:
+                  locCat?.length > 0
+                    ? locCat.sort((a, b) => a.localeCompare(b))
+                    : [],
+              }));
+          })
+          .catch((err) => console.log("API error ", err));
+      }
+      if (name === "location") {
+        let dataObj = {
+          country: formData["country"],
+          state: value,
+        };
+        fetchDataService(
+          "https://countriesnow.space/api/v0.1/countries/state/cities",
+          null,
+          "POST",
+          dataObj,
+        )
+          .then(({ data }) => {
+            data &&
+              setData((prev) => ({
+                ...prev,
+                locationCategory:
+                  data?.length > 0
+                    ? data.sort((a, b) => a.localeCompare(b))
+                    : [],
+              }));
+          })
+          .catch((err) => console.log("API error", err));
+      }
+      if (name === "date" || name === "from") {
+        setSelectDateTime(
+          moment(value).isSame(moment(), "day") ? moment() : moment(value),
+        );
+      }
+      setFormData((prev) => {
+        const updatedValue = type === "checkbox" ? checked : value;
+        return prev[name] === updatedValue
+          ? prev
+          : { ...prev, [name]: updatedValue };
+      });
+    },
+    [formData],
+  );
 
   const handleBooking = (formData) => {
     console.log(formData);
@@ -274,6 +315,21 @@ const Reservation = () => {
 
   const handleToggleSearchMode = useCallback(() => {
     setAdvancedSearch((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    fetchDataService("https://restcountries.com/v3.1/all")
+      .then((data) => {
+        // console.log(data);
+        data &&
+          setData((prev) => ({
+            ...prev,
+            countries: data
+              ?.map(({ name }) => name.common)
+              ?.sort((a, b) => a.localeCompare(b)),
+          }));
+      })
+      .catch((err) => console.log("API error: ", err));
   }, []);
 
   return (

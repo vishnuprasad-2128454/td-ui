@@ -1,18 +1,25 @@
-export const fetchDataService = async ({ url, method }) => {
+export const fetchDataService = async (url, queryParam = "", method, body) => {
   try {
-    const response = await fetch(url, {
-      method: method,
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${url}${queryParam ? `?${queryParam}` : ""}`,
+      {
+        method: method,
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body:
+          body && (method === "POST" || method === "PUT" || method === "PATCH")
+            ? JSON.stringify(body)
+            : null,
       },
-    });
+    );
     if (!response.ok)
       throw new Error(`Service failed with error code ${response.status}`);
     const data_obj = await response.json();
-    console.log("Data: ", data_obj);
-    return data_obj?.data;
+    return data_obj;
   } catch (error) {
     console.log("Error fetching! ", error);
+    return error;
   }
 };
