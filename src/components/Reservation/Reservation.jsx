@@ -142,7 +142,7 @@ const Reservation = () => {
         label: "From",
         type: "dateTime-local",
         required: true,
-        min: now.format(dateTimeFormat),
+        min: selectedDateTime.format(dateTimeFormat),
       },
       {
         name: "to",
@@ -221,9 +221,11 @@ const Reservation = () => {
           if (!advancedSearch && type === "select" && name === "toTime")
             acc[name] = timeObj.toTime.format(timeFormat);
           if (advancedSearch && type === "dateTime-local" && name === "from")
-            acc[name] = moment().format(dateTimeFormat);
+            acc[name] = moment(timeObj.current).format(dateTimeFormat);
           if (advancedSearch && type === "dateTime-local" && name === "to")
-            acc[name] = moment().add(1, "hour").format(dateTimeFormat);
+            acc[name] = moment(timeObj.current)
+              .add(1, "hour")
+              .format(dateTimeFormat);
           if (acc[name] === undefined) acc[name] = "";
 
           return acc;

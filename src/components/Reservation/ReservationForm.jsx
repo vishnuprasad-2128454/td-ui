@@ -1,3 +1,4 @@
+import moment from "moment";
 import React, { useState } from "react";
 import {
   Button,
@@ -18,7 +19,6 @@ const ReservationForm = (props) => {
     advancedSearch,
     handleToggle,
   } = props;
-  // console.log(formData);
 
   const [errors, setErrors] = useState({});
 
@@ -39,6 +39,14 @@ const ReservationForm = (props) => {
       if (required && type === "select") {
         if (formData[name] === `Select a ${label}`) {
           newErrors[name] = `Please select a proper ${label}`;
+        }
+        if (formData["fromTime"] && formData["toTime"]) {
+          let fromTime = moment(formData["fromTime"], "HH:mm");
+          let toTime = moment(formData["toTime"], "HH:mm");
+          if (fromTime.isSame(toTime))
+            newErrors["toTime"] = "Please select a proper time";
+          if (fromTime.isAfter(toTime))
+            newErrors["fromTime"] = "Please select a proper time";
         }
       }
       if (type === "dateTime-local" && formData["from"] === formData["to"])
